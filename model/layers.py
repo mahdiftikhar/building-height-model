@@ -10,7 +10,6 @@ class Yolo(nn.Module):
 
     def forward(self, x):
         x = self.yolo(x)
-        print(x.pandas())
 
         return x
 
@@ -48,6 +47,7 @@ class Model(nn.Module):
         # self.shadow_length = ShadowLength()
 
     def forward(self, x):
+        print(x)
         image, class_id, bbox, shd_len, height, lat, long, time = x
         y = self.yolo(image)
 

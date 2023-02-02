@@ -22,12 +22,12 @@ def train(model, data_loaders: dict, optimizer, loss_fn, num_epochs=10, device="
 
     model.eval()
 
-    for x in data_loaders["train"]:
-        # image = image.to(device)
-        results = model(x)
-        print(results.pandas().xyxy)
-
-        break
+    for epoch in tqdm(range(num_epochs)):
+        for x in data_loaders["train"]:
+            # image = image.to(device)
+            results = model(x)
+            print(results.shape)
+            return
 
 
 if __name__ == "__main__":
@@ -51,15 +51,15 @@ if __name__ == "__main__":
 
     t = transforms.Compose([transforms.ToTensor(), transforms.Resize(INPUT_SHAPE)])
 
-    train_dataset = BuildingDataset(train_df, IMAGE_DIR)
-    test_dataset = BuildingDataset(val_df, IMAGE_DIR)
+    train_dataset = BuildingDataset(train_df, IMAGE_DIR, t)
+    test_dataset = BuildingDataset(val_df, IMAGE_DIR, t)
 
-    # dataloaders = {
-    #     "train": DataLoader(train_dataset, batch_size=1, shuffle=False),
-    #     "val": DataLoader(test_dataset, batch_size=1, shuffle=False),
-    # }
+    dataloaders = {
+        "train": DataLoader(train_dataset, batch_size=2, shuffle=False),
+        "val": DataLoader(test_dataset, batch_size=2, shuffle=False),
+    }
 
-    dataloaders = {"train": train_dataset, "val": test_dataset}
+    # dataloaders = {"train": train_dataset, "val": test_dataset}
 
     model = Model(yolo_model="yolov5n", yolo_pretrained=True)
 
