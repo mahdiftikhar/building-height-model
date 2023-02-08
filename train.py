@@ -60,7 +60,6 @@ def train_cropped(
 
                 with torch.set_grad_enabled(phase == "train"):
                     outputs = model(image)
-                    print(outputs.shape, shd_len.shape)
 
                     loss = loss_fn(outputs, shd_len)
 
