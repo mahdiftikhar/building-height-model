@@ -1,22 +1,23 @@
 from torch import nn
 from torch.functional import F
 from torch import hub
-from yolov5.models.yolo import DetectionModel as YoloModel
-from yolov5.models.common import Detections
+
+# from yolov5.models.yolo import DetectionModel as YoloModel
+# from yolov5.models.common import Detections
 from model.utils import its_xyxy_time, its_denormalize_time
 
 from torchvision.transforms import Pad, Resize
 from torchvision.models import resnet101, resnet18
 
 
-class Yolo(nn.Module):
-    def __init__(self, cfg_path="model/yolo_cfg/yolov5s.yaml", pretrained=True):
-        super(Yolo, self).__init__()
-        self.yolo = YoloModel(cfg=cfg_path, ch=3)
+# class Yolo(nn.Module):
+#     def __init__(self, cfg_path="model/yolo_cfg/yolov5s.yaml", pretrained=True):
+#         super(Yolo, self).__init__()
+#         self.yolo = YoloModel(cfg=cfg_path, ch=3)
 
-    def forward(self, x):
-        x = self.yolo(x)
-        return x
+#     def forward(self, x):
+#         x = self.yolo(x)
+#         return x
 
 
 class Cropping(nn.Module):
@@ -83,7 +84,7 @@ class ShadowLength(nn.Module):
 class Model(nn.Module):
     def __init__(self, yolo_cfg="model/yolo_cfg/yolov5s.yaml", yolo_pretrained=True):
         super().__init__()
-        self.yolo = Yolo(cfg_path=yolo_cfg, pretrained=yolo_pretrained)
+        # self.yolo = Yolo(cfg_path=yolo_cfg, pretrained=yolo_pretrained)
         # self.lambdaLayer = Lambda()
         # self.shadow_length = ShadowLength()
 
