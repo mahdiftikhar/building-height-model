@@ -11,6 +11,11 @@ import copy
 import numpy as np
 import os
 
+
+# import warnings
+
+# warnings.filterwarnings("ignore")
+
 from model.dataset import CroppedDataset
 from model.layers import Model, ShadowLength
 
@@ -46,7 +51,7 @@ def train_cropped(
 
             for x in data_loaders[phase]:
                 image = x.image
-                shd_len = x.shd_len
+                shd_len = x.shd_len.view(-1, 1)
 
                 image = image.float().to(device)
                 shd_len = shd_len.float().to(device)
@@ -55,6 +60,7 @@ def train_cropped(
 
                 with torch.set_grad_enabled(phase == "train"):
                     outputs = model(image)
+                    print(outputs.shape, shd_len.shape)
 
                     loss = loss_fn(outputs, shd_len)
 
@@ -114,10 +120,10 @@ def other_train(
 
             # feed the input and acquire the output from network
             outputs = model(inputs)
-
             # print(outputs, labels)
 
             # calculating the predicted and the expected loss
+
             loss = criterion(outputs, labels)
 
             # compute the gradient
@@ -181,7 +187,7 @@ def main():
     writer = SummaryWriter()
 
     val_loss_hist, train_loss_hist = train_cropped(
-        model, dataloaders, optimizer, loss_fn, writer, num_epochs=10, device=device
+        model, dataloaders, optimizer, loss_fn, writer, num_epochs=50, device=device
     )
 
     # other_train(
@@ -193,6 +199,7 @@ def main():
     #     device=device,
     #     writer=writer,
     # )
+
     writer.flush()
     writer.close()
 
