@@ -134,3 +134,6 @@ dataset.csv
 
 *.pt
 yolov5/
+
+weights/
+runs/

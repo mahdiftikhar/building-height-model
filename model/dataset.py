@@ -2,6 +2,7 @@ from torch.utils.data import Dataset
 import cv2
 import os
 from collections import namedtuple
+from model.utils import its_xyxy_time, its_denormalize_time
 
 
 label = namedtuple(
@@ -9,8 +10,13 @@ label = namedtuple(
     ["image", "class_id", "bbox", "shd_len", "height", "lat", "long", "time"],
 )
 
+CroppedDatasetLabel = namedtuple(
+    "label",
+    ["image", "shd_len", "height", "lat", "long", "time"],
+)
 
-class BuildingDataset(Dataset):
+
+class YoloDataset(Dataset):
     """Custom dataset class for building height detection model
 
     The class takes in a dataframe and image directory and returns a dataset
@@ -26,7 +32,7 @@ class BuildingDataset(Dataset):
     """
 
     def __init__(self, df, image_dir, image_transforms=None):
-        super(BuildingDataset, self).__init__()
+        super(YoloDataset, self).__init__()
         self.df = df
         self.image_dir = image_dir
         self.image_transforms = image_transforms
@@ -67,3 +73,36 @@ class BuildingDataset(Dataset):
         class_id = df.class_id.values
 
         return label(image, class_id, bbox, shd_len, height, lat, long, time)
+
+
+class CroppedDataset:
+    def __init__(self, df, image_dir, image_transforms=None):
+        self.image_dir = image_dir
+        self.df = df
+        self.image_transforms = image_transforms
+
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, idx):
+        image_path = os.path.join(self.image_dir, self.df.image[idx])
+        image = cv2.imread(image_path)
+
+        image_shape = image.shape
+
+        bbox = self.df[["cx", "cy", "w", "h"]].values[idx]
+        denorm_bbox = its_denormalize_time(bbox, image_shape=image_shape)
+        xyxy = its_xyxy_time(denorm_bbox)
+
+        cropeed_image = image[xyxy[1] : xyxy[3], xyxy[0] : xyxy[2]]
+
+        shd_len = self.df.shadow_length.values[idx]
+        height = self.df.height.values[idx]
+        lat = self.df.lat.values[idx]
+        long = self.df.long.values[idx]
+        time = self.df.time.values[idx]
+
+        if self.image_transforms is not None:
+            cropeed_image = self.image_transforms(cropeed_image)
+
+        return CroppedDatasetLabel(cropeed_image, shd_len, height, lat, long, time)
