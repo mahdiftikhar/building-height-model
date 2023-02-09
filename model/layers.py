@@ -71,10 +71,10 @@ class ShadowLength(nn.Module):
             # nn.Linear(in_features=512, out_features=64, bias=True),
             # nn.Linear(in_features=64, out_features=16, bias=True),
             nn.Linear(in_features=512, out_features=256, bias=True),
-            nn.Sigmoid(),
+            nn.ReLU(),
             nn.Linear(in_features=256, out_features=64, bias=True),
-            nn.Sigmoid(),
-            nn.Linear(in_features=64, out_features=1, bias=True)
+            nn.ReLU(),
+            nn.Linear(in_features=64, out_features=1, bias=True),
         )
 
         print(self.resnet)
