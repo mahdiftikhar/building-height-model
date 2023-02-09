@@ -49,7 +49,7 @@ def train_cropped(
 
             running_loss = 0.0
 
-            for x in data_loaders[phase]:
+            for x in tqdm(data_loaders[phase]):
                 image = x.image
                 shd_len = x.shd_len.view(-1, 1)
 

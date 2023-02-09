@@ -137,3 +137,5 @@ yolov5/
 
 weights/
 runs/
+
+nohup.out
