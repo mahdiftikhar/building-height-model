@@ -30,7 +30,7 @@ def train_cropped(
     model, data_loaders: dict, optimizer, loss_fn, writer, num_epochs=10, device="cpu"
 ):
     ...
-    print("TRAINING STARTED")
+    print("TRAINING 
 
     val_loss_history = []
     train_loss_history = []
