@@ -23,7 +23,7 @@ from model.layers import Model, ShadowLength
 DATASET_PATH = "dataset.csv"
 IMAGE_DIR = "images"
 INPUT_SHAPE = 640
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 
 
 def train_cropped(

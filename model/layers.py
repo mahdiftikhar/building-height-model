@@ -7,7 +7,7 @@ from torch import hub
 from model.utils import its_xyxy_time, its_denormalize_time
 
 from torchvision.transforms import Pad, Resize
-from torchvision.models import resnet101, resnet18
+from torchvision.models import resnet101, resnet18, resnet50
 
 
 # class Yolo(nn.Module):
@@ -64,9 +64,9 @@ class ShadowLength(nn.Module):
         super().__init__()
         # self.resent = resnet101(pretrained=True)
         self.resnet = nn.Sequential(
-            *list(resnet18(pretrained=True).children())[:-1],
+            *list(resnet50(pretrained=True).children())[:-1],
             nn.Flatten(),
-            # nn.Linear(in_features=2048, out_features=1024, bias=True),
+            nn.Linear(in_features=2048, out_features=512, bias=True),
             # nn.Linear(in_features=1024, out_features=512, bias=True),
             # nn.Linear(in_features=512, out_features=64, bias=True),
             # nn.Linear(in_features=64, out_features=16, bias=True),
@@ -76,6 +76,8 @@ class ShadowLength(nn.Module):
             nn.Sigmoid(),
             nn.Linear(in_features=64, out_features=1, bias=True)
         )
+
+        print(self.resnet)
 
     def forward(self, x):
         return F.relu(self.resnet(x))
