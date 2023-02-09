@@ -74,13 +74,14 @@ class ShadowLength(nn.Module):
             nn.Sigmoid(),
             nn.Linear(in_features=256, out_features=64, bias=True),
             nn.Sigmoid(),
-            nn.Linear(in_features=64, out_features=1, bias=True)
+            nn.Linear(in_features=64, out_features=1, bias=True),
+            nn.Sigmoid()
         )
 
         print(self.resnet)
 
     def forward(self, x):
-        return F.relu(self.resnet(x))
+        return self.resnet(x)
 
 
 class Model(nn.Module):

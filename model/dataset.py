@@ -3,6 +3,7 @@ import cv2
 import os
 from collections import namedtuple
 from model.utils import its_xyxy_time, its_denormalize_time
+import numpy as np
 
 
 label = namedtuple(
@@ -96,7 +97,10 @@ class CroppedDataset:
 
         cropeed_image = image[xyxy[1] : xyxy[3], xyxy[0] : xyxy[2]]
 
-        shd_len = self.df.shadow_length.values[idx]
+        pt1 = self.df[["SL_P1_x", "SL_P1_y"]].values[idx]
+        pt2 = self.df[["SL_P2_x", "SL_P2_y"]].values[idx]
+
+        shd_len = np.linalg.norm(pt1 - pt2)
         height = self.df.height.values[idx]
         lat = self.df.lat.values[idx]
         long = self.df.long.values[idx]
