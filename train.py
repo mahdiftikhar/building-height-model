@@ -2,7 +2,9 @@ import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms as T
+from torch import nn
 from torchsummary import summary
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -23,7 +25,7 @@ from model.layers import Model, ShadowLength
 DATASET_PATH = "dataset.csv"
 IMAGE_DIR = "images"
 INPUT_SHAPE = 640
-BATCH_SIZE = 32
+BATCH_SIZE = 128
 
 
 def train_cropped(
@@ -37,6 +39,8 @@ def train_cropped(
     best_model_wts = copy.deepcopy(model.state_dict())
     last_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1000000
+
+    # model = nn.DataParallel(model)
 
     for epoch in tqdm(range(num_epochs)):
         print(f"Epoch {epoch} / {num_epochs - 1}", end="\t")
