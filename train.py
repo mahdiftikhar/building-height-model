@@ -10,6 +10,10 @@ from pprint import pprint
 import copy
 import numpy as np
 import os
+import argparse
+
+
+from util.util import train_test_split
 
 
 # import warnings
@@ -22,7 +26,7 @@ from model.layers import Model, ShadowLength
 
 DATASET_PATH = "dataset.csv"
 IMAGE_DIR = "images"
-INPUT_SHAPE = 640
+IMAGE_SIZE = 640
 BATCH_SIZE = 32
 
 
@@ -30,7 +34,7 @@ def train_cropped(
     model, data_loaders: dict, optimizer, loss_fn, writer, num_epochs=10, device="cpu"
 ):
     ...
-    print("TRAINING 
+    print("TRAINING STARTED")
 
     val_loss_history = []
     train_loss_history = []
@@ -100,74 +104,11 @@ def train_cropped(
     return val_loss_history, train_loss_history
 
 
-def other_train(
-    model, train_dataloader, optimizer, criterion, epochs=5, device="gpu", writer=None
-):
-    for epoch in tqdm(range(epochs)):
-        # set the running loss at each epoch to zero
-        running_loss = 0.0
-        # we will enumerate the train loader with starting index of 0
-        # for each iteration (i) and the data (tuple of input and labels)
-        for i, data in enumerate(train_dataloader):
-            inputs = data.image
-            labels = data.shd_len
-            inputs = inputs.float().to(device)
-            labels = labels.float().to(device)
+def main(args):
+    device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
 
-            # clear the gradient
-            optimizer.zero_grad()
-
-            # feed the input and acquire the output from network
-            outputs = model(inputs)
-            # print(outputs, labels)
-
-            # calculating the predicted and the expected loss
-
-            loss = criterion(outputs, labels)
-
-            # compute the gradient
-            loss.backward()
-            writer.add_scalar("loss/train", loss, epoch)
-            # update the parameters
-            optimizer.step()
-
-            if loss.item() == np.nan:
-                for out, lab in zip(outputs, labels):
-                    print(out, lab)
-
-            # print statistics
-            # if i % 10 == 0:
-            #     print(
-            #         "[%d, %5d] loss: %.3f %.3f"
-            #         % (epoch + 1, i + 1, running_loss, loss.item())
-            #     )
-            #     running_loss += loss.item()
-
-
-def main():
-    df = pd.read_csv(DATASET_PATH)
-    df = df[df.shadow_length != -1]
-    df.reset_index(drop=True, inplace=True)
-
-    print("Total Images in Dataset:                     ", len(df.image_id.unique()))
-    print("Total Bounding Boxes in Dataset:             ", len(df))
-    print(
-        "Total bounding boxes with shadow annotation: ", len(df[df.shadow_length != -1])
-    )
-
-    size = len(df)
-    train_df = df[: int(size * 0.8)]
-    val_df = df[int(size * 0.8) :]
-
-    print(
-        "Total Images in Train Dataset:               ", len(train_df.image_id.unique())
-    )
-    print(
-        "Total Images in Train Dataset:               ", len(val_df.image_id.unique())
-    )
-
-    train_df.reset_index(drop=True, inplace=True)
-    val_df.reset_index(drop=True, inplace=True)
+    df = pd.read_csv(args.data)
+    train_df, val_df = train_test_split(df)
 
     transforms = T.Compose([T.ToTensor(), T.Resize((50, 50))])
     train_dataset = CroppedDataset(train_df, IMAGE_DIR, transforms)
@@ -178,30 +119,30 @@ def main():
         "val": DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True),
     }
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
     model = ShadowLength().to(device)
     loss_fn = torch.nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     writer = SummaryWriter()
 
-    val_loss_hist, train_loss_hist = train_cropped(
+    _, _ = train_cropped(
         model, dataloaders, optimizer, loss_fn, writer, num_epochs=50, device=device
     )
-
-    # other_train(
-    #     model,
-    #     dataloaders["train"],
-    #     optimizer,
-    #     loss_fn,
-    #     epochs=5,
-    #     device=device,
-    #     writer=writer,
-    # )
 
     writer.flush()
     writer.close()
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(prog="train", description="Training the model")
+    parser.add_argument("--gpu", type=int, help="GPU number", default=0, required=False)
+    parser.add_argument(
+        "--data",
+        type=str,
+        help="Path to dataset",
+        default="dataset.csv",
+        required=False,
+    )
+
+    args = parser.parse_args()
+
+    main(args)
