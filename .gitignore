@@ -137,3 +137,6 @@ yolov5/
 
 weights/
 runs/
+
+yolov7/
+Yolov7-training/

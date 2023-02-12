@@ -1,3 +1,6 @@
+import numpy as np
+from pvlib.solarposition import get_solarposition
+
 def its_denormalize_time(bbox, image_shape=(640, 640)):
     if bbox.ndim == 1:
         denorm_bbox = bbox.copy().reshape(1, -1)
@@ -34,3 +37,17 @@ def its_xyxy_time(bbox):
         xyxy = xyxy[0]
 
     return xyxy.astype(int)
+
+def euc_dist_time(pts):
+    pt1, pt2 = np.array(pts[:2]), np.array(pts[2:])
+    return np.sqrt(np.sum((pt1 - pt2) ** 2))
+
+def get_solar_elevation(time, lat, long):
+    '''
+        Lat and long are in degrees
+        Time is datetime object
+
+        Returns elevation in degrees
+    '''
+    solpos = get_solarposition(time, lat, long)
+    return solpos.elevation.values[0]

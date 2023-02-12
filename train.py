@@ -12,7 +12,7 @@ import numpy as np
 import os
 
 from model.dataset import CroppedDataset
-from model.layers import Model, ShadowLength
+from model.layers import Model
 
 
 DATASET_PATH = "dataset.csv"
@@ -36,7 +36,7 @@ def train_cropped(
     for epoch in tqdm(range(num_epochs)):
         print(f"Epoch {epoch} / {num_epochs - 1}", end="\t")
 
-        for phase in ["train", "val"]:
+        for phase in tqdm(["train", "val"]):
             if phase == "train":
                 model.train()
             elif phase == "val":
@@ -44,22 +44,24 @@ def train_cropped(
 
             running_loss = 0.0
 
-            for x in data_loaders[phase]:
+            for x in tqdm(data_loaders[phase]):
                 image = x.image
-                shd_len = x.shd_len
-
-                image = image.float().to(device)
-                shd_len = shd_len.float().to(device)
+                labels_shd_len = x.shd_len
+                height = x.height
 
                 optimizer.zero_grad()
 
                 with torch.set_grad_enabled(phase == "train"):
-                    outputs = model(image)
+                    pred_shd_len, height = model(x)
+                    pred_shd_len = pred_shd_len.squeeze()
 
-                    loss = loss_fn(outputs, shd_len)
+                    # print("Preds: ", outputs)
+                    # print("Labels: ", height)
 
-                    if loss == np.nan:
-                        print(outputs, shd_len)
+                    loss = loss_fn(pred_shd_len, labels_shd_len)
+
+                    # if loss == np.nan:
+                    #     print(outputs, shd_len)
 
                     if phase == "train":
                         loss.backward()
@@ -141,14 +143,15 @@ def other_train(
 
 def main():
     df = pd.read_csv(DATASET_PATH)
-    df = df[df.shadow_length != -1]
-    df.reset_index(drop=True, inplace=True)
+    # to remove the images with no shadow length annotation
+    # df = df[df.shadow_length != -1]
+    # df.reset_index(drop=True, inplace=True)
 
     print("Total Images in Dataset:                     ", len(df.image_id.unique()))
     print("Total Bounding Boxes in Dataset:             ", len(df))
-    print(
-        "Total bounding boxes with shadow annotation: ", len(df[df.shadow_length != -1])
-    )
+    # print(
+    #     "Total bounding boxes with shadow annotation: ", len(df[df.shadow_length != -1])
+    # )
 
     size = len(df)
     train_df = df[: int(size * 0.8)]
@@ -164,18 +167,19 @@ def main():
     train_df.reset_index(drop=True, inplace=True)
     val_df.reset_index(drop=True, inplace=True)
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
     transforms = T.Compose([T.ToTensor(), T.Resize((50, 50))])
-    train_dataset = CroppedDataset(train_df, IMAGE_DIR, transforms)
-    val_dataset = CroppedDataset(val_df, IMAGE_DIR, transforms)
+    train_dataset = CroppedDataset(train_df, IMAGE_DIR, transforms, device)
+    val_dataset = CroppedDataset(val_df, IMAGE_DIR, transforms, device)
 
     dataloaders = {
         "train": DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True),
         "val": DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True),
     }
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = ShadowLength().to(device)
+    model = Model().to(device)
     loss_fn = torch.nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     writer = SummaryWriter()
