@@ -8,7 +8,7 @@ from tqdm import tqdm
 from pprint import pprint
 
 from model.dataset import BuildingDataset
-from model.layers import Model
+from layers import Model
 
 
 DATASET_PATH = "dataset.csv"
