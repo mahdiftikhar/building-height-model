@@ -27,7 +27,7 @@ from model.layers import Model
 DATASET_PATH = "dataset.csv"
 IMAGE_DIR = "images"
 IMAGE_SIZE = 640
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 
 
 def train_cropped(
