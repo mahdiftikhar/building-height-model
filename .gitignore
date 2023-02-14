@@ -139,3 +139,5 @@ weights/
 runs/
 
 nohup.out
+yolov7/
+Yolov7-training/

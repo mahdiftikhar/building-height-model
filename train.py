@@ -20,8 +20,8 @@ from util.util import train_test_split
 
 # warnings.filterwarnings("ignore")
 
-from model.dataset import CroppedDataset
-from model.layers import Model, ShadowLength
+from model.dataset import CroppedDataset, cast_to_device
+from model.layers import Model
 
 
 DATASET_PATH = "dataset.csv"
@@ -45,7 +45,7 @@ def train_cropped(
     for epoch in tqdm(range(num_epochs)):
         print(f"Epoch {epoch} / {num_epochs - 1}", end="\t")
 
-        for phase in ["train", "val"]:
+        for phase in tqdm(["train", "val"]):
             if phase == "train":
                 model.train()
             elif phase == "val":
@@ -54,29 +54,30 @@ def train_cropped(
             running_loss = 0.0
 
             for x in tqdm(data_loaders[phase]):
-                image = x.image
-                shd_len = x.shd_len.view(-1, 1)
-
-                image = image.float().to(device)
-                shd_len = shd_len.float().to(device)
+                image, labels_shd_len, labels_height, solor_angle = cast_to_device(
+                    x, device
+                )
 
                 optimizer.zero_grad()
 
                 with torch.set_grad_enabled(phase == "train"):
-                    outputs = model(image)
+                    pred_shd_len, height = model(image, solor_angle)
+                    pred_shd_len = pred_shd_len.squeeze()
 
-                    loss = loss_fn(outputs, shd_len)
+                    shd_loss = loss_fn(pred_shd_len, labels_shd_len)
+                    height_loss = (height - labels_height).abs().mean()
 
-                    if loss == np.nan:
-                        print(outputs, shd_len)
+                    if shd_loss == np.nan:
+                        print(pred_shd_len, labels_shd_len)
 
                     if phase == "train":
-                        loss.backward()
+                        shd_loss.backward()
                         optimizer.step()
 
-                    writer.add_scalar(f"Loss/{phase}", loss, epoch)
+                    writer.add_scalar(f"Loss Shadow Length/{phase}", shd_loss, epoch)
+                    writer.add_scaler(f"Loss Height/{phase}", height_loss, epoch)
 
-                running_loss += np.nan_to_num(loss.item())
+                running_loss += np.nan_to_num(shd_loss.item())
 
                 epoch_loss = running_loss / len(data_loaders[phase].dataset)
 
@@ -119,7 +120,7 @@ def main(args):
         "val": DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True),
     }
 
-    model = ShadowLength().to(device)
+    model = Model().to(device)
     loss_fn = torch.nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     writer = SummaryWriter()

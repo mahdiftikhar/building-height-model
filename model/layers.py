@@ -1,6 +1,7 @@
 from torch import nn
 from torch.functional import F
 from torch import hub
+import torch
 
 # from yolov5.models.yolo import DetectionModel as YoloModel
 # from yolov5.models.common import Detections
@@ -9,6 +10,8 @@ from model.utils import its_xyxy_time, its_denormalize_time
 from torchvision.transforms import Pad, Resize
 from torchvision.models import resnet101, resnet18, resnet50
 
+
+DEFAULT_IMAGE_SIZE = 640
 
 # class Yolo(nn.Module):
 #     def __init__(self, cfg_path="model/yolo_cfg/yolov5s.yaml", pretrained=True):
@@ -55,8 +58,10 @@ class Lambda(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def forward(self, x):
-        pass
+    def forward(self, shd_len, solar_angle):
+        shd_len = shd_len * DEFAULT_IMAGE_SIZE
+
+        return shd_len / torch.tan(solar_angle)
 
 
 class ShadowLength(nn.Module):
@@ -67,9 +72,6 @@ class ShadowLength(nn.Module):
             *list(resnet50(pretrained=True).children())[:-1],
             nn.Flatten(),
             nn.Linear(in_features=2048, out_features=512, bias=True),
-            # nn.Linear(in_features=1024, out_features=512, bias=True),
-            # nn.Linear(in_features=512, out_features=64, bias=True),
-            # nn.Linear(in_features=64, out_features=16, bias=True),
             nn.Linear(in_features=512, out_features=256, bias=True),
             nn.Sigmoid(),
             nn.Linear(in_features=256, out_features=64, bias=True),
@@ -88,19 +90,15 @@ class Model(nn.Module):
     def __init__(self, yolo_cfg="model/yolo_cfg/yolov5s.yaml", yolo_pretrained=True):
         super().__init__()
         # self.yolo = Yolo(cfg_path=yolo_cfg, pretrained=yolo_pretrained)
-        # self.lambdaLayer = Lambda()
-        # self.shadow_length = ShadowLength()
+        self.lambdaLayer = Lambda()
+        self.shadow_length = ShadowLength()
 
-    def forward(self, x):
-        image, class_id, bbox, shd_len, height, lat, long, time = x
-        image = image.view((1, 3, 640, 640))
+    def forward(self, image, solar_angle):
+        shd_len = self.shadow_length(image)
 
-        # y = self.yolo(image)
-
-        x = self.cropping(image, bbox)
-        # print(x.shape)
+        height = self.lambdaLayer(shd_len, solar_angle)
 
         # x = self.cropping(x)
         # x = self.lambda(x)
         # x = self.shadow_length(x)
-        return x
+        return shd_len, height

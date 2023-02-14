@@ -1,9 +1,15 @@
 from torch.utils.data import Dataset
+import torch
 import cv2
 import os
 from collections import namedtuple
-from model.utils import its_xyxy_time, its_denormalize_time
+import datetime
 import numpy as np
+from model.utils import (
+    its_xyxy_time,
+    its_denormalize_time,
+    get_solar_elevation,
+)
 
 
 label = namedtuple(
@@ -13,8 +19,17 @@ label = namedtuple(
 
 CroppedDatasetLabel = namedtuple(
     "label",
-    ["image", "shd_len", "height", "lat", "long", "time"],
+    ["image", "shd_len", "height", "solar_angle"],
 )
+
+
+def cast_to_device(x, device="cpu"):
+    image, shd_len, height, solar_angle = x
+    image = image.to(device)
+    shd_len = shd_len.to(device)
+    height = height.to(device)
+    solar_angle = solar_angle.to(device)
+    return image, shd_len, height, solar_angle
 
 
 class YoloDataset(Dataset):
@@ -102,11 +117,22 @@ class CroppedDataset:
 
         shd_len = np.linalg.norm(pt1 - pt2)
         height = self.df.height.values[idx]
+
         lat = self.df.lat.values[idx]
         long = self.df.long.values[idx]
-        time = self.df.time.values[idx]
+
+        time = self.df.time.values[idx].split("-")
+        time = [int(t) for t in time]
+        time = datetime.datetime(*time)
+
+        solar_angle = get_solar_elevation(time, lat, long)
+        solar_angle = np.deg2rad(solar_angle)
 
         if self.image_transforms is not None:
             cropeed_image = self.image_transforms(cropeed_image)
 
-        return CroppedDatasetLabel(cropeed_image, shd_len, height, lat, long, time)
+        shd_len = torch.tensor(shd_len)
+        height = torch.tensor(height)
+        solar_angle = torch.tensor(solar_angle)
+
+        return CroppedDatasetLabel(cropeed_image, shd_len, height, solar_angle)
