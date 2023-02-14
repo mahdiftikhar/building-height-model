@@ -69,7 +69,7 @@ class ShadowLength(nn.Module):
         super().__init__()
         # self.resent = resnet101(pretrained=True)
         self.resnet = nn.Sequential(
-            *list(resnet50(pretrained=True).children())[:-1],
+            *list(resnet101(pretrained=True).children())[:-1],
             nn.Flatten(),
             nn.Linear(in_features=2048, out_features=512, bias=True),
             nn.Linear(in_features=512, out_features=256, bias=True),
