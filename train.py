@@ -75,7 +75,7 @@ def train_cropped(
                         optimizer.step()
 
                     writer.add_scalar(f"Loss Shadow Length/{phase}", shd_loss, epoch)
-                    writer.add_scaler(f"Loss Height/{phase}", height_loss, epoch)
+                    writer.add_scalar(f"Loss Height/{phase}", height_loss, epoch)
 
                 running_loss += np.nan_to_num(shd_loss.item())
 
@@ -122,7 +122,12 @@ def main(args):
 
     model = Model().to(device)
     loss_fn = torch.nn.L1Loss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+    if parser == "adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    elif parser == "sgd":
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+        
     writer = SummaryWriter()
 
     _, _ = train_cropped(
@@ -143,6 +148,7 @@ if __name__ == "__main__":
         default="dataset.csv",
         required=False,
     )
+    parser.add_argument("--optimizer", type=str, help="Optimizer", default="adam")
 
     args = parser.parse_args()
 
