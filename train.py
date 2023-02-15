@@ -123,11 +123,11 @@ def main(args):
     model = Model().to(device)
     loss_fn = torch.nn.L1Loss()
 
-    if parser == "adam":
+    if args.optimizer == "adam":
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    elif parser == "sgd":
+    elif args.optimizer == "sgd":
         optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
-        
+
     writer = SummaryWriter()
 
     _, _ = train_cropped(
