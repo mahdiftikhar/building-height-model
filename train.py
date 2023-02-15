@@ -27,7 +27,7 @@ from model.layers import Model
 DATASET_PATH = "dataset.csv"
 IMAGE_DIR = "images"
 IMAGE_SIZE = 640
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 
 
 def train_cropped(
@@ -118,6 +118,8 @@ def main(args):
     train_dataset = CroppedDataset(train_df, IMAGE_DIR, transforms)
     val_dataset = CroppedDataset(val_df, IMAGE_DIR, transforms)
 
+    BATCH_SIZE = args.batch_size
+
     dataloaders = {
         "train": DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True),
         "val": DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True),
@@ -125,19 +127,28 @@ def main(args):
 
     model = Model().to(device)
 
-    model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
-
     loss_fn = torch.nn.L1Loss()
 
     if args.optimizer == "adam":
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     elif args.optimizer == "sgd":
         optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+    else:
+        raise ValueError("Optimizer not supported")
+
+    if args.multi_gpu:
+        model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
 
     writer = SummaryWriter()
 
     _, _ = train_cropped(
-        model, dataloaders, optimizer, loss_fn, writer, num_epochs=50, device=device
+        model,
+        dataloaders,
+        optimizer,
+        loss_fn,
+        writer,
+        num_epochs=args.epochs,
+        device=device,
     )
 
     writer.flush()
@@ -155,6 +166,9 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument("--optimizer", type=str, help="Optimizer", default="adam")
+    parser.add_argument("--batch_size", type=int, help="Batch size", default=64)
+    parser.add_argument("--epochs", type=int, help="Number of epochs", default=50)
+    parser.add_argument("--multi-gpu", action="store_true", default=False)
 
     args = parser.parse_args()
 
