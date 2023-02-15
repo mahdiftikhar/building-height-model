@@ -62,8 +62,6 @@ class Lambda(nn.Module):
         shd_len = shd_len * 1000
         shd_len = shd_len.view(solar_angle.shape)
 
-        print("*******", shd_len.shape, solar_angle.shape, torch.tan(solar_angle).shape)
-
         return shd_len / torch.tan(solar_angle)
 
 
@@ -99,9 +97,4 @@ class Model(nn.Module):
 
         height = self.lambdaLayer(shd_len, solar_angle)
 
-        # x = self.cropping(x)
-        # x = self.lambda(x)
-        # x = self.shadow_length(x)
-
-        print("\t????", height.shape)
         return shd_len, height
