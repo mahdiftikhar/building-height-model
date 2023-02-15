@@ -61,11 +61,12 @@ def train_cropped(
                 optimizer.zero_grad()
 
                 with torch.set_grad_enabled(phase == "train"):
-                    pred_shd_len, height = model(image, solor_angle)
+                    pred_shd_len, pred_height = model(image, solor_angle)
                     pred_shd_len = pred_shd_len.squeeze()
+                    pred_height = pred_height.squeeze()
 
                     shd_loss = loss_fn(pred_shd_len, labels_shd_len)
-                    height_loss = (height - labels_height).abs().mean()
+                    height_loss = loss_fn(pred_height, labels_height)
 
                     if shd_loss == np.nan:
                         print(pred_shd_len, labels_shd_len)
@@ -74,8 +75,10 @@ def train_cropped(
                         shd_loss.backward()
                         optimizer.step()
 
-                    writer.add_scalar(f"Loss Shadow Length/{phase}", shd_loss, epoch)
-                    writer.add_scalar(f"Loss Height/{phase}", height_loss, epoch)
+                    writer.add_scalar(
+                        f"Loss Shadow Length/{phase}", shd_loss.item(), epoch
+                    )
+                    writer.add_scalar(f"Loss Height/{phase}", height_loss.item(), epoch)
 
                 running_loss += np.nan_to_num(shd_loss.item())
 
@@ -121,6 +124,9 @@ def main(args):
     }
 
     model = Model().to(device)
+
+    model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
+
     loss_fn = torch.nn.L1Loss()
 
     if args.optimizer == "adam":
