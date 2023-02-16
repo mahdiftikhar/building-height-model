@@ -63,6 +63,7 @@ def train_cropped(
                 with torch.set_grad_enabled(phase == "train"):
                     pred_shd_len, height = model(image, solor_angle)
                     pred_shd_len = pred_shd_len.squeeze()
+                    height = np.clip(height, 0, 33)
 
                     shd_loss = loss_fn(pred_shd_len, labels_shd_len)
                     height_loss = (height - labels_height).abs().mean()
@@ -72,6 +73,7 @@ def train_cropped(
 
                     if phase == "train":
                         shd_loss.backward()
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10, norm_type=1)
                         optimizer.step()
 
                     writer.add_scalar(f"Loss Shadow Length/{phase}", shd_loss, epoch)
