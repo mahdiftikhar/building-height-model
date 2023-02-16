@@ -59,7 +59,8 @@ class Lambda(nn.Module):
         super().__init__()
 
     def forward(self, shd_len, solar_angle):
-        shd_len = shd_len * DEFAULT_IMAGE_SIZE
+        shd_len = shd_len * 1000
+        shd_len = shd_len.view(solar_angle.shape)
 
         return shd_len / torch.tan(solar_angle)
 
@@ -80,8 +81,6 @@ class ShadowLength(nn.Module):
             nn.Sigmoid()
         )
 
-        print(self.resnet)
-
     def forward(self, x):
         return self.resnet(x)
 
@@ -98,7 +97,4 @@ class Model(nn.Module):
 
         height = self.lambdaLayer(shd_len, solar_angle)
 
-        # x = self.cropping(x)
-        # x = self.lambda(x)
-        # x = self.shadow_length(x)
         return shd_len, height

@@ -27,7 +27,7 @@ from model.layers import Model
 DATASET_PATH = "dataset.csv"
 IMAGE_DIR = "images"
 IMAGE_SIZE = 640
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 
 
 def train_cropped(
@@ -61,23 +61,28 @@ def train_cropped(
                 optimizer.zero_grad()
 
                 with torch.set_grad_enabled(phase == "train"):
-                    pred_shd_len, height = model(image, solor_angle)
+                    pred_shd_len, pred_height = model(image, solor_angle)
                     pred_shd_len = pred_shd_len.squeeze()
-                    height = np.clip(height, 0, 33)
+                    pred_height = np.clip(pred_height, 0, 33)
+                    pred_height = pred_height.squeeze()
 
                     shd_loss = loss_fn(pred_shd_len, labels_shd_len)
-                    height_loss = (height - labels_height).abs().mean()
+                    height_loss = loss_fn(pred_height, labels_height)
 
                     if shd_loss == np.nan:
                         print(pred_shd_len, labels_shd_len)
 
                     if phase == "train":
                         shd_loss.backward()
-                        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10, norm_type=1)
+                        torch.nn.utils.clip_grad_norm_(
+                            model.parameters(), max_norm=10, norm_type=1
+                        )
                         optimizer.step()
 
-                    writer.add_scalar(f"Loss Shadow Length/{phase}", shd_loss, epoch)
-                    writer.add_scaler(f"Loss Height/{phase}", height_loss, epoch)
+                    writer.add_scalar(
+                        f"Loss Shadow Length/{phase}", shd_loss.item(), epoch
+                    )
+                    writer.add_scalar(f"Loss Height/{phase}", height_loss.item(), epoch)
 
                 running_loss += np.nan_to_num(shd_loss.item())
 
@@ -117,18 +122,37 @@ def main(args):
     train_dataset = CroppedDataset(train_df, IMAGE_DIR, transforms)
     val_dataset = CroppedDataset(val_df, IMAGE_DIR, transforms)
 
+    BATCH_SIZE = args.batch_size
+
     dataloaders = {
         "train": DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True),
         "val": DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True),
     }
 
     model = Model().to(device)
+
     loss_fn = torch.nn.L1Loss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+    if args.optimizer == "adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    elif args.optimizer == "sgd":
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+    else:
+        raise ValueError("Optimizer not supported")
+
+    if args.multi_gpu:
+        model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
+
     writer = SummaryWriter()
 
     _, _ = train_cropped(
-        model, dataloaders, optimizer, loss_fn, writer, num_epochs=50, device=device
+        model,
+        dataloaders,
+        optimizer,
+        loss_fn,
+        writer,
+        num_epochs=args.epochs,
+        device=device,
     )
 
     writer.flush()
@@ -145,6 +169,10 @@ if __name__ == "__main__":
         default="dataset.csv",
         required=False,
     )
+    parser.add_argument("--optimizer", type=str, help="Optimizer", default="adam")
+    parser.add_argument("--batch_size", type=int, help="Batch size", default=64)
+    parser.add_argument("--epochs", type=int, help="Number of epochs", default=50)
+    parser.add_argument("--multi-gpu", action="store_true", default=False)
 
     args = parser.parse_args()
 
