@@ -62,7 +62,7 @@ class Lambda(nn.Module):
         shd_len = shd_len * 1000
         shd_len = shd_len.view(solar_angle.shape)
 
-        return shd_len / torch.tan(solar_angle)
+        return shd_len / torch.tan(torch.deg2rad(solar_angle))
 
 
 class ShadowLength(nn.Module):
