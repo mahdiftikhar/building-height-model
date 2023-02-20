@@ -24,21 +24,13 @@ from util.util import train_test_split
 
 from model.dataset import CroppedDataset, cast_to_device
 from model.layers import Model
+from model.loss import RMSELoss, combining_loss
 
 
 DATASET_PATH = "dataset.csv"
 IMAGE_DIR = "images"
 IMAGE_SIZE = 640
 BATCH_SIZE = 128
-
-
-class RMSELoss(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.mse = torch.nn.MSELoss()
-
-    def forward(self, y_pred, y_true):
-        return torch.sqrt(self.mse(y_pred, y_true))
 
 
 def train_cropped(
@@ -86,12 +78,13 @@ def train_cropped(
 
                     shd_loss = loss_fn(pred_shd_len, labels_shd_len)
                     height_loss = loss_fn(pred_height, labels_height)
+                    combinined_loss = combining_loss(shd_loss, height_loss)
 
                     if shd_loss == np.nan:
                         print(pred_shd_len, labels_shd_len)
 
                     if phase == "train":
-                        shd_loss.backward()
+                        combinined_loss.backward()
                         torch.nn.utils.clip_grad_norm_(
                             model.parameters(), max_norm=10, norm_type=1
                         )
