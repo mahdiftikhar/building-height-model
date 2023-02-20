@@ -131,8 +131,8 @@ class CroppedDataset:
         if self.image_transforms is not None:
             cropeed_image = self.image_transforms(cropeed_image)
 
-        shd_len = torch.tensor(shd_len)
-        height = torch.tensor(height)
-        solar_angle = torch.tensor(solar_angle)
+        shd_len = torch.tensor(shd_len).float()
+        height = torch.tensor(height).float()
+        solar_angle = torch.tensor(solar_angle).float()
 
         return CroppedDatasetLabel(cropeed_image, shd_len, height, solar_angle)
