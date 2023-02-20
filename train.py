@@ -151,8 +151,15 @@ def main(args):
         loss_fn = torch.nn.SmoothL1Loss()
     elif args.loss == "huber":
         loss_fn = torch.nn.HuberLoss()
+    else:
+        raise ValueError("Loss not supported")
 
-    model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
+    model = Model()
+
+    if args.multi_gpu:
+        model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
+    else: 
+        model = model.to(device) 
 
     writer = SummaryWriter()
 
