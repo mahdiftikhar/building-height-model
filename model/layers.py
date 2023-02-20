@@ -71,7 +71,7 @@ class ShadowLength(nn.Module):
 
         if backbone == "resnet18":
             self.resnet = nn.Sequential(
-                *list(resnet18(pretrained=False).children())[:-1],
+                *list(resnet18(pretrained=True).children())[:-1],
                 nn.Flatten(),
                 nn.Linear(in_features=512, out_features=256, bias=True),
                 nn.Sigmoid(),
@@ -80,7 +80,7 @@ class ShadowLength(nn.Module):
                 nn.Linear(in_features=64, out_features=1, bias=True),
                 nn.Sigmoid()
             )
-        else:
+        elif backbone == "resnet101":
             self.resnet = nn.Sequential(
                 *list(resnet101(pretrained=True).children())[:-1],
                 nn.Flatten(),
@@ -98,11 +98,16 @@ class ShadowLength(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, yolo_cfg="model/yolo_cfg/yolov5s.yaml", yolo_pretrained=True):
+    def __init__(
+        self,
+        yolo_cfg="model/yolo_cfg/yolov5s.yaml",
+        yolo_pretrained=True,
+        shd_len_backbone="resnet18",
+    ):
         super().__init__()
         # self.yolo = Yolo(cfg_path=yolo_cfg, pretrained=yolo_pretrained)
         self.lambdaLayer = Lambda()
-        self.shadow_length = ShadowLength()
+        self.shadow_length = ShadowLength(backbone=shd_len_backbone)
 
     def forward(self, image, solar_angle):
         shd_len = self.shadow_length(image)

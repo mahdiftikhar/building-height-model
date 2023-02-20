@@ -151,7 +151,7 @@ def main(args):
         "val": DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True),
     }
 
-    model = Model().to(device)
+    model = Model(shd_len_backbone="resnet101").to(device)
 
     if args.optimizer == "adam":
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
