@@ -32,6 +32,15 @@ IMAGE_SIZE = 640
 BATCH_SIZE = 128
 
 
+class RMSELoss(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = torch.nn.MSELoss()
+
+    def forward(self, y_pred, y_true):
+        return torch.sqrt(self.mse(y_pred, y_true))
+
+
 def train_cropped(
     model, data_loaders: dict, optimizer, loss_fn, writer, num_epochs=10, device="cpu"
 ):
@@ -60,8 +69,8 @@ def train_cropped(
             running_shd_loss = 0.0
             running_height_loss = 0.0
 
-            for i, x in enumerate(data_loaders[phase]):
-                counter += i
+            for x in tqdm(data_loaders[phase]):
+                counter += 1
 
                 image, labels_shd_len, labels_height, solor_angle = cast_to_device(
                     x, device
@@ -88,24 +97,22 @@ def train_cropped(
                         )
                         optimizer.step()
 
-                    # writer.add_scalar(
-                    #     f"Loss Shadow Length/{phase} fast", shd_loss.item(), i + counter
-                    # )
-                    # writer.add_scalar(
-                    #     f"Loss Height/{phase} fast", height_loss.item(), i + counter
-                    # )
+                    writer.add_scalar(
+                        f"Loss Shadow Length/{phase} fast", shd_loss.item(), counter
+                    )
+                    writer.add_scalar(
+                        f"Loss Height/{phase} fast", height_loss.item(), counter
+                    )
                     # print(f"Loss Shadow Length/{phase}", shd_loss.item(), epoch)
 
-                    running_shd_loss += torch.nan_to_num(shd_loss.item())
-                    running_height_loss += torch.nan_to_num(height_loss.item())
+                    running_shd_loss += shd_loss.item()
+                    running_height_loss += height_loss.item()
 
             shd_epoch_loss = running_shd_loss / len(data_loaders[phase].dataset)
             height_epoch_loss = running_height_loss / len(data_loaders[phase].dataset)
 
-            writer.add_scalar(
-                f"Loss Shadow Length/{phase}", shd_epoch_loss.item(), epoch
-            )
-            writer.add_scalar(f"Loss Height/{phase}", height_epoch_loss.item(), epoch)
+            writer.add_scalar(f"Loss Shadow Length/{phase}", shd_epoch_loss, epoch)
+            writer.add_scalar(f"Loss Height/{phase}", height_epoch_loss, epoch)
 
             print(f"{phase} loss: {shd_epoch_loss:.4f}", end="\t")
             print(f"{phase} height loss: {height_epoch_loss:.4f}", end="\t")
@@ -166,6 +173,8 @@ def main(args):
         loss_fn = torch.nn.SmoothL1Loss()
     elif args.loss == "huber":
         loss_fn = torch.nn.HuberLoss()
+    elif args.loss == "rmse":
+        loss_fn = RMSELoss()
     else:
         raise ValueError("Loss not supported")
 
