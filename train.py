@@ -61,7 +61,7 @@ def train_cropped(
             running_shd_loss = 0.0
             running_height_loss = 0.0
 
-            for x in tqdm(data_loaders[phase]):
+            for x in data_loaders[phase]:
                 counters[phase] += 1
 
                 image, labels_shd_len, labels_height, solor_angle = cast_to_device(
@@ -103,8 +103,12 @@ def train_cropped(
                     running_shd_loss += shd_loss.item()
                     running_height_loss += height_loss.item()
 
-            shd_epoch_loss = running_shd_loss / len(data_loaders[phase].dataset)
-            height_epoch_loss = running_height_loss / len(data_loaders[phase].dataset)
+            shd_epoch_loss = running_shd_loss / (
+                len(data_loaders[phase].dataset) / data_loaders[phase].batch_size
+            )
+            height_epoch_loss = running_height_loss / (
+                len(data_loaders[phase].dataset) / data_loaders[phase].batch_size
+            )
 
             writer.add_scalar(f"Loss Shadow Length/{phase}", shd_epoch_loss, epoch)
             writer.add_scalar(f"Loss Height/{phase}", height_epoch_loss, epoch)
