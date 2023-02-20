@@ -43,6 +43,7 @@ def train_cropped(
     best_model_wts = copy.deepcopy(model.state_dict())
     last_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1000000
+    counter = 0
 
     time_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     os.mkdir(f"weights/{time_str}")
@@ -50,15 +51,18 @@ def train_cropped(
     for epoch in tqdm(range(num_epochs)):
         print(f"Epoch {epoch} / {num_epochs - 1}", end="\t")
 
-        for phase in tqdm(["train", "val"]):
+        for phase in ["train", "val"]:
             if phase == "train":
                 model.train()
             elif phase == "val":
                 model.eval()
 
-            running_loss = 0.0
+            running_shd_loss = 0.0
+            running_height_loss = 0.0
 
-            for x in tqdm(data_loaders[phase]):
+            for i, x in enumerate(data_loaders[phase]):
+                counter += i
+
                 image, labels_shd_len, labels_height, solor_angle = cast_to_device(
                     x, device
                 )
@@ -84,29 +88,40 @@ def train_cropped(
                         )
                         optimizer.step()
 
-                    writer.add_scalar(
-                        f"Loss Shadow Length/{phase}", shd_loss.item(), epoch
-                    )
-                    writer.add_scalar(f"Loss Height/{phase}", height_loss.item(), epoch)
+                    # writer.add_scalar(
+                    #     f"Loss Shadow Length/{phase} fast", shd_loss.item(), i + counter
+                    # )
+                    # writer.add_scalar(
+                    #     f"Loss Height/{phase} fast", height_loss.item(), i + counter
+                    # )
+                    # print(f"Loss Shadow Length/{phase}", shd_loss.item(), epoch)
 
-                running_loss += np.nan_to_num(shd_loss.item())
+                    running_shd_loss += torch.nan_to_num(shd_loss.item())
+                    running_height_loss += torch.nan_to_num(height_loss.item())
 
-                epoch_loss = running_loss / len(data_loaders[phase].dataset)
+            shd_epoch_loss = running_shd_loss / len(data_loaders[phase].dataset)
+            height_epoch_loss = running_height_loss / len(data_loaders[phase].dataset)
 
-            # print(f"{phase} loss: {epoch_loss:.4f}", end="\t")
+            writer.add_scalar(
+                f"Loss Shadow Length/{phase}", shd_epoch_loss.item(), epoch
+            )
+            writer.add_scalar(f"Loss Height/{phase}", height_epoch_loss.item(), epoch)
 
-            if phase == "val" and epoch_loss < best_loss:
-                best_loss = epoch_loss
+            print(f"{phase} loss: {shd_epoch_loss:.4f}", end="\t")
+            print(f"{phase} height loss: {height_epoch_loss:.4f}", end="\t")
+
+            if phase == "val" and shd_epoch_loss < best_loss:
+                best_loss = shd_epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
                 torch.save(best_model_wts, os.path.join("weights", time_str, "best.pt"))
 
             if phase == "val":
-                val_loss_history.append(epoch_loss)
+                val_loss_history.append(shd_epoch_loss)
                 last_model_wts = copy.deepcopy(model.state_dict())
                 torch.save(last_model_wts, os.path.join("weights", time_str, "last.pt"))
 
             if phase == "train":
-                train_loss_history.append(epoch_loss)
+                train_loss_history.append(shd_epoch_loss)
 
         print()
 
