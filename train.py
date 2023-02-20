@@ -11,13 +11,15 @@ import copy
 import numpy as np
 import os
 import argparse
+from datetime import datetime
+
+# import yaml
 
 
 from util.util import train_test_split
 
-
+# ? remove printing of warnings5
 # import warnings
-
 # warnings.filterwarnings("ignore")
 
 from model.dataset import CroppedDataset, cast_to_device
@@ -41,6 +43,9 @@ def train_cropped(
     best_model_wts = copy.deepcopy(model.state_dict())
     last_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1000000
+
+    time_str = datetime.now().strftime("%d_%m_%Y_%H_%M")
+    os.mkdir(f"weights/{time_str}")
 
     for epoch in tqdm(range(num_epochs)):
         print(f"Epoch {epoch} / {num_epochs - 1}", end="\t")
@@ -93,12 +98,12 @@ def train_cropped(
             if phase == "val" and epoch_loss < best_loss:
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
-                torch.save(best_model_wts, os.path.join("weights", "best.pt"))
+                torch.save(best_model_wts, os.path.join("weights", time_str, "best.pt"))
 
             if phase == "val":
                 val_loss_history.append(epoch_loss)
                 last_model_wts = copy.deepcopy(model.state_dict())
-                torch.save(last_model_wts, os.path.join("weights", "last.pt"))
+                torch.save(last_model_wts, os.path.join("weights", time_str, "last.pt"))
 
             if phase == "train":
                 train_loss_history.append(epoch_loss)
@@ -131,8 +136,6 @@ def main(args):
 
     model = Model().to(device)
 
-    loss_fn = torch.nn.L1Loss()
-
     if args.optimizer == "adam":
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     elif args.optimizer == "sgd":
@@ -140,8 +143,16 @@ def main(args):
     else:
         raise ValueError("Optimizer not supported")
 
-    if args.multi_gpu:
-        model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
+    if args.loss == "l1":
+        loss_fn = torch.nn.L1Loss()
+    elif args.loss == "mse":
+        loss_fn = torch.nn.MSELoss()
+    elif args.loss == "smoothl1":
+        loss_fn = torch.nn.SmoothL1Loss()
+    elif args.loss == "huber":
+        loss_fn = torch.nn.HuberLoss()
+
+    model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
 
     writer = SummaryWriter()
 
@@ -173,6 +184,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, help="Batch size", default=64)
     parser.add_argument("--epochs", type=int, help="Number of epochs", default=50)
     parser.add_argument("--multi-gpu", action="store_true", default=False)
+    parser.add_argument("--loss", type=str, help="Loss function", default="l1")
 
     args = parser.parse_args()
 
