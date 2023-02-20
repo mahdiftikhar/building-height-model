@@ -44,7 +44,7 @@ def train_cropped(
     last_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1000000
 
-    time_str = datetime.now().strftime("%d_%m_%Y_%H_%M")
+    time_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     os.mkdir(f"weights/{time_str}")
 
     for epoch in tqdm(range(num_epochs)):
@@ -68,7 +68,7 @@ def train_cropped(
                 with torch.set_grad_enabled(phase == "train"):
                     pred_shd_len, pred_height = model(image, solor_angle)
                     pred_shd_len = pred_shd_len.squeeze()
-                    pred_height = np.clip(pred_height, 0, 33)
+                    pred_height = torch.clip(pred_height, 0, 33)
                     pred_height = pred_height.squeeze()
 
                     shd_loss = loss_fn(pred_shd_len, labels_shd_len)
@@ -154,12 +154,8 @@ def main(args):
     else:
         raise ValueError("Loss not supported")
 
-    model = Model()
-
     if args.multi_gpu:
         model = torch.nn.DataParallel(model, device_ids=[0, 1, 2, 3])
-    else: 
-        model = model.to(device) 
 
     writer = SummaryWriter()
 
