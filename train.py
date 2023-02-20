@@ -87,6 +87,12 @@ def train_cropped(
                     shd_loss = loss_fn(pred_shd_len, labels_shd_len)
                     height_loss = loss_fn(pred_height, labels_height)
 
+                    print(
+                        pred_shd_len,
+                        labels_shd_len,
+                        (pred_shd_len - labels_shd_len) ** 2,
+                    )
+
                     if shd_loss == np.nan:
                         print(pred_shd_len, labels_shd_len)
 
