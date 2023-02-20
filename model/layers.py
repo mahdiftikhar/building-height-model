@@ -68,48 +68,48 @@ class Lambda(nn.Module):
 class ShadowLength(nn.Module):
     def __init__(self):
         super().__init__()
-        # self.resent = resnet101(pretrained=True)
-        # self.resnet = nn.Sequential(
-        #     *list(resnet101(pretrained=True).children())[:-1],
-        #     nn.Flatten(),
-        #     nn.Linear(in_features=2048, out_features=512, bias=True),
-        #     nn.Linear(in_features=512, out_features=256, bias=True),
-        #     nn.Sigmoid(),
-        #     nn.Linear(in_features=256, out_features=64, bias=True),
-        #     nn.Sigmoid(),
-        #     nn.Linear(in_features=64, out_features=1, bias=True),
-        #     nn.Sigmoid()
-        # )
-
+        self.resent = resnet101(pretrained=True)
         self.resnet = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, stride=2, padding=3),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=1, stride=1, padding=0),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=64, out_channels=192, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(192),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-            nn.Conv2d(in_channels=192, out_channels=192, kernel_size=1, stride=1, padding=0),
-            nn.BatchNorm2d(192),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=192, out_channels=384, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(384),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=384, out_channels=256, kernel_size=1, stride=1, padding=0),
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
+            *list(resnet101(pretrained=True).children())[:-1],
             nn.Flatten(),
-            nn.Linear(in_features=256 * 7 * 7, out_features=512, bias=True),
+            nn.Linear(in_features=2048, out_features=512, bias=True),
             nn.Linear(in_features=512, out_features=256, bias=True),
             nn.Sigmoid(),
             nn.Linear(in_features=256, out_features=64, bias=True),
             nn.Sigmoid(),
             nn.Linear(in_features=64, out_features=1, bias=True),
+            nn.Sigmoid()
         )
+
+        # self.resnet = nn.Sequential(
+        #     nn.Conv2d(in_channels=3, out_channels=64, kernel_size=7, stride=2, padding=3),
+        #     nn.BatchNorm2d(64),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
+        #     nn.Conv2d(in_channels=64, out_channels=64, kernel_size=1, stride=1, padding=0),
+        #     nn.BatchNorm2d(64),
+        #     nn.ReLU(),
+        #     nn.Conv2d(in_channels=64, out_channels=192, kernel_size=3, stride=1, padding=1),
+        #     nn.BatchNorm2d(192),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
+        #     nn.Conv2d(in_channels=192, out_channels=192, kernel_size=1, stride=1, padding=0),
+        #     nn.BatchNorm2d(192),
+        #     nn.ReLU(),
+        #     nn.Conv2d(in_channels=192, out_channels=384, kernel_size=3, stride=1, padding=1),
+        #     nn.BatchNorm2d(384),
+        #     nn.ReLU(),
+        #     nn.Conv2d(in_channels=384, out_channels=256, kernel_size=1, stride=1, padding=0),
+        #     nn.BatchNorm2d(256),
+        #     nn.ReLU(),
+        #     nn.Flatten(),
+        #     nn.Linear(in_features=256 * 7 * 7, out_features=512, bias=True),
+        #     nn.Linear(in_features=512, out_features=256, bias=True),
+        #     nn.Sigmoid(),
+        #     nn.Linear(in_features=256, out_features=64, bias=True),
+        #     nn.Sigmoid(),
+        #     nn.Linear(in_features=64, out_features=1, bias=True),
+        # )
 
     def forward(self, x):
         return self.resnet(x)
