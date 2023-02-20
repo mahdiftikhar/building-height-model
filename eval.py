@@ -78,7 +78,7 @@ if __name__ and "main":
         default="dataset.csv",
         required=False,
     )
-    parser.add_argument("--loss", type=str, help="Loss function", default="mse", required=False)
+    parser.add_argument("--loss", type=str, help="Loss function", default="rmse", required=False)
     parser.add_argument("--batch_size", type=int, help="Batch size", default=64, required=False)
     parser.add_argument("--weights", type=str, help="Path to weights", default="weights/best.pt", required=False)
 
