@@ -63,7 +63,7 @@ def train_cropped(
                 with torch.set_grad_enabled(phase == "train"):
                     pred_shd_len, pred_height = model(image, solor_angle)
                     pred_shd_len = pred_shd_len.squeeze()
-                    pred_height = np.clip(pred_height, 0, 33)
+                    pred_height = torch.clip(pred_height, 0, 33)
                     pred_height = pred_height.squeeze()
 
                     shd_loss = loss_fn(pred_shd_len, labels_shd_len)
