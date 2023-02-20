@@ -52,7 +52,7 @@ def train_cropped(
     best_model_wts = copy.deepcopy(model.state_dict())
     last_model_wts = copy.deepcopy(model.state_dict())
     best_loss = 1000000
-    counter = 0
+    counters = {"train": 0, "val": 0}
 
     time_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     os.mkdir(f"weights/{time_str}")
@@ -70,7 +70,7 @@ def train_cropped(
             running_height_loss = 0.0
 
             for x in tqdm(data_loaders[phase]):
-                counter += 1
+                counters[phase] += 1
 
                 image, labels_shd_len, labels_height, solor_angle = cast_to_device(
                     x, device
@@ -87,27 +87,23 @@ def train_cropped(
                     shd_loss = loss_fn(pred_shd_len, labels_shd_len)
                     height_loss = loss_fn(pred_height, labels_height)
 
-                    print(
-                        pred_shd_len,
-                        labels_shd_len,
-                        (pred_shd_len - labels_shd_len) ** 2,
-                    )
-
-                    if shd_loss == np.nan:
+                    if shd_loss.item() != shd_loss.item():
                         print(pred_shd_len, labels_shd_len)
 
                     if phase == "train":
                         shd_loss.backward()
-                        torch.nn.utils.clip_grad_norm_(
-                            model.parameters(), max_norm=10, norm_type=1
-                        )
+                        # torch.nn.utils.clip_grad_norm_(
+                        #     model.parameters(), max_norm=10, norm_type=1
+                        # )
                         optimizer.step()
 
                     writer.add_scalar(
-                        f"Loss Shadow Length/{phase} fast", shd_loss.item(), counter
+                        f"Loss Shadow Length/{phase} fast",
+                        shd_loss.item(),
+                        counters[phase],
                     )
                     writer.add_scalar(
-                        f"Loss Height/{phase} fast", height_loss.item(), counter
+                        f"Loss Height/{phase} fast", height_loss.item(), counters[phase]
                     )
                     # print(f"Loss Shadow Length/{phase}", shd_loss.item(), epoch)
 

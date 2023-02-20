@@ -68,11 +68,10 @@ class Lambda(nn.Module):
 class ShadowLength(nn.Module):
     def __init__(self, backbone="resnet18"):
         super().__init__()
-        self.resent = resnet101(pretrained=True)
 
-        if backbone=="resnet18":
+        if backbone == "resnet18":
             self.resnet = nn.Sequential(
-                *list(resnet18(pretrained=True).children())[:-1],
+                *list(resnet18(pretrained=False).children())[:-1],
                 nn.Flatten(),
                 nn.Linear(in_features=512, out_features=256, bias=True),
                 nn.Sigmoid(),
@@ -93,7 +92,6 @@ class ShadowLength(nn.Module):
                 nn.Linear(in_features=64, out_features=1, bias=True),
                 nn.Sigmoid()
             )
-
 
     def forward(self, x):
         return self.resnet(x)
