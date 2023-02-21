@@ -34,7 +34,14 @@ BATCH_SIZE = 128
 
 
 def train_cropped(
-    model, data_loaders: dict, optimizer, loss_fn, writer, num_epochs=10, device="cpu"
+    model,
+    data_loaders: dict,
+    optimizer,
+    loss_fn,
+    writer,
+    num_epochs=10,
+    device="cpu",
+    shd_loss_weight=1.0,
 ):
     ...
     print("TRAINING STARTED")
@@ -61,7 +68,7 @@ def train_cropped(
             running_shd_loss = 0.0
             running_height_loss = 0.0
 
-            for x in tqdm(data_loaders[phase]):
+            for x in data_loaders[phase]:
                 counters[phase] += 1
 
                 image, labels_shd_len, labels_height, solor_angle = cast_to_device(
@@ -73,12 +80,13 @@ def train_cropped(
                 with torch.set_grad_enabled(phase == "train"):
                     pred_shd_len, pred_height = model(image, solor_angle)
                     pred_shd_len = pred_shd_len.squeeze()
-                    pred_height = torch.clip(pred_height, 0, 33)
                     pred_height = pred_height.squeeze()
 
                     shd_loss = loss_fn(pred_shd_len, labels_shd_len)
                     height_loss = loss_fn(pred_height, labels_height)
-                    combinined_loss = combining_loss(shd_loss, height_loss)
+                    combinined_loss = combining_loss(
+                        shd_loss, height_loss, shd_loss_weight=shd_loss_weight
+                    )
 
                     if shd_loss.item() != shd_loss.item():
                         print(pred_shd_len, labels_shd_len)
@@ -103,8 +111,12 @@ def train_cropped(
                     running_shd_loss += shd_loss.item()
                     running_height_loss += height_loss.item()
 
-            shd_epoch_loss = running_shd_loss / len(data_loaders[phase].dataset)
-            height_epoch_loss = running_height_loss / len(data_loaders[phase].dataset)
+            shd_epoch_loss = running_shd_loss / (
+                len(data_loaders[phase].dataset) / data_loaders[phase].batch_size
+            )
+            height_epoch_loss = running_height_loss / (
+                len(data_loaders[phase].dataset) / data_loaders[phase].batch_size
+            )
 
             writer.add_scalar(f"Loss Shadow Length/{phase}", shd_epoch_loss, epoch)
             writer.add_scalar(f"Loss Height/{phase}", height_epoch_loss, epoch)
@@ -151,7 +163,7 @@ def main(args):
         "val": DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=True),
     }
 
-    model = Model(shd_len_backbone="resnet101").to(device)
+    model = Model(shd_len_backbone=args.model, pretrained=args.pretrained).to(device)
 
     if args.optimizer == "adam":
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -186,6 +198,7 @@ def main(args):
         writer,
         num_epochs=args.epochs,
         device=device,
+        shd_loss_weight=args.shd_loss_weight,
     )
 
     writer.flush()
@@ -207,6 +220,11 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, help="Number of epochs", default=50)
     parser.add_argument("--multi-gpu", action="store_true", default=False)
     parser.add_argument("--loss", type=str, help="Loss function", default="l1")
+    parser.add_argument("--model", type=str, help="Model", default="resnet101")
+    parser.add_argument("--pretrained", action="store_true", default=False)
+    parser.add_argument(
+        "--shd_loss_weight", type=float, help="Shadow loss weight", default=1.0
+    )
 
     args = parser.parse_args()
 
