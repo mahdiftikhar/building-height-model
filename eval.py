@@ -20,7 +20,7 @@ def eval(model, dataloader, device, loss_fn):
     model.eval()
     shd_running_loss = 0.0
     height_running_loss = 0.0
-    for _, x in tqdm(enumerate(dataloader)):
+    for x in tqdm(dataloader, total=len(dataloader)):
         image, labels_shd_len, labels_height, solor_angle = cast_to_device(x, device)
         pred_shd_len, pred_height = model(image, solor_angle)
         
@@ -49,7 +49,7 @@ def main(args):
     test_dataset = CroppedDataset(test_df, IMAGE_DIR, transforms)
     test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-    model = Model().to(device)
+    model = Model(shd_len_backbone=args.model).to(device)
     model.load_state_dict(torch.load(args.weights))
 
     if args.loss == "l1":
@@ -81,6 +81,7 @@ if __name__ and "main":
     parser.add_argument("--loss", type=str, help="Loss function", default="rmse", required=False)
     parser.add_argument("--batch_size", type=int, help="Batch size", default=64, required=False)
     parser.add_argument("--weights", type=str, help="Path to weights", default="weights/best.pt", required=False)
+    parser.add_argument("--model", type=str, help="Model name", default="resnet101", required=False)
 
     args = parser.parse_args()
     main(args)

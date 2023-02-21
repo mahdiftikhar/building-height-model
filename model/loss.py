@@ -1,7 +1,9 @@
 import torch
 
-def combining_loss(shd_loss, height_loss, shd_weight=1):
-    return shd_weight * shd_loss + (1 - shd_weight) * height_loss
+
+def combining_loss(shd_loss, height_loss, shd_loss_weight=1):
+    return shd_loss_weight * shd_loss + (1 - shd_loss_weight) * height_loss
+
 
 class RMSELoss(torch.nn.Module):
     def __init__(self):
