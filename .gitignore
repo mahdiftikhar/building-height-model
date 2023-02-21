@@ -141,3 +141,5 @@ runs/
 nohup.out
 yolov7/
 Yolov7-training/
+
+dataset-handler/*.csv
