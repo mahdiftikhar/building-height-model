@@ -137,6 +137,7 @@ yolov5/
 
 weights/
 runs/
+runs-eval/
 
 nohup.out
 yolov7/

@@ -1,0 +1,4 @@
+first run -- adam -- l1 -- 0.0068 -- 50 epochs
+second run -- sgd -- l1 -- 0151 -- 50 epochs
+third run -- adam -- mse -- 0.0001 <- sqrt krna bcz mse -- 50 epochs 
+fourth run -- sgd -- mse -- 0.0048 <- sqrt krna bcz mse -- 50 epochs

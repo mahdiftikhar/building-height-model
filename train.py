@@ -166,9 +166,9 @@ def main(args):
     model = Model(shd_len_backbone=args.model, pretrained=args.pretrained).to(device)
 
     if args.optimizer == "adam":
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
     elif args.optimizer == "sgd":
-        optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.wd)
     else:
         raise ValueError("Optimizer not supported")
 
@@ -225,7 +225,20 @@ if __name__ == "__main__":
     parser.add_argument(
         "--shd_loss_weight", type=float, help="Shadow loss weight", default=1.0
     )
+    parser.add_argument("--lr", type=float, help="Learning rate", default=0.001)
+    parser.add_argument("--wd", type=float, help="Weight decay", default=1e-5)
 
     args = parser.parse_args()
 
+    print("--------------------")
+    print("Training Parameters:")
+    print(args)
+    print("--------------------")
+
     main(args)
+
+
+'''
+    Example usage:
+    python train.py --gpu 1 --model resnet18 --shd_loss_weight 0 --lr 0.0001
+'''
