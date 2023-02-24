@@ -35,3 +35,16 @@ def write_eval_file(shd_loss, height_loss, analytical_height_loss, shd_batch_los
     fileName = f"eval-{evalFiles+1}.json"
     with open(f"{folder}/{fileName}", "w") as f:
         json.dump(obj, f, indent=4)
+
+def write_train_file(model, optimizer, loss_fn, num_epochs, shd_loss_weight, folder):
+    obj = {
+            "Model": model,
+            "Optimizer": optimizer,
+            "Loss fn": loss_fn,
+            "Num Epochs": num_epochs,
+            "shd_loss_weight": shd_loss_weight,
+        }
+    
+    fileName = "train_parameters.json"
+    with open(f"{folder}/{fileName}", "w") as f:
+        json.dump(obj, f, indent=4)

@@ -16,11 +16,11 @@ from datetime import datetime
 # import yaml
 
 
-from util.util import train_test_split
+from util.util import train_test_split, write_train_file
 
 # ? remove printing of warnings5
-# import warnings
-# warnings.filterwarnings("ignore")
+import warnings
+warnings.filterwarnings("ignore")
 
 from model.dataset import CroppedDataset, cast_to_device
 from model.layers import Model
@@ -55,6 +55,7 @@ def train_cropped(
 
     time_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     os.mkdir(f"weights/{time_str}")
+    write_train_file(model, optimizer, loss_fn, num_epochs, shd_loss_weight, f"weights/{time_str}")
 
     for epoch in tqdm(range(num_epochs)):
         print(f"Epoch {epoch} / {num_epochs - 1}", end="\t")
@@ -225,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--shd_loss_weight", type=float, help="Shadow loss weight", default=1.0
     )
-    parser.add_argument("--lr", type=float, help="Learning rate", default=0.001)
+    parser.add_argument("--lr", type=float, help="Learning rate", default=0.0001)
     parser.add_argument("--wd", type=float, help="Weight decay", default=1e-5)
 
     args = parser.parse_args()
@@ -240,5 +241,5 @@ if __name__ == "__main__":
 
 '''
     Example usage:
-    python train.py --gpu 1 --model resnet18 --shd_loss_weight 0 --lr 0.0001
+    python train.py --gpu 0 --model resnet18 --loss
 '''
