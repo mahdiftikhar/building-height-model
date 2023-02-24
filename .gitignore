@@ -137,10 +137,15 @@ yolov5/
 
 weights/
 runs/
-runs-eval/
+csvs/
 
 nohup.out
 yolov7/
 Yolov7-training/
 
 dataset-handler/*.csv
+
+*.csv
+
+temp.ipynb
+temp.txt

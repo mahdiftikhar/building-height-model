@@ -61,7 +61,7 @@ class Lambda(nn.Module):
     def forward(self, shd_len, solar_angle):
         shd_len = shd_len * 1000
         shd_len = shd_len.view(solar_angle.shape)
-        height = shd_len / torch.tan(torch.deg2rad(solar_angle))
+        height = shd_len / torch.tan(solar_angle)
 
         return torch.clip(height, 0, 33)
 
