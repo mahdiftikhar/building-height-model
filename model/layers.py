@@ -2,10 +2,11 @@ from torch import nn
 from torch.functional import F
 from torch import hub
 import torch
+from torchsummary import summary
 
 # from yolov5.models.yolo import DetectionModel as YoloModel
 # from yolov5.models.common import Detections
-from model.utils import its_xyxy_time, its_denormalize_time
+from utils import its_xyxy_time, its_denormalize_time
 
 from torchvision.transforms import Pad, Resize
 from torchvision.models import resnet101, resnet18, resnet50
@@ -78,7 +79,7 @@ class ShadowLength(nn.Module):
                 nn.Sigmoid(),
                 nn.Linear(in_features=256, out_features=64, bias=True),
                 nn.Sigmoid(),
-                nn.Linear(in_features=64, out_features=1, bias=True),
+                nn.Linear(in_features=64, out_features=2, bias=True),
                 nn.Sigmoid()
             )
         elif backbone == "resnet101":
@@ -90,7 +91,7 @@ class ShadowLength(nn.Module):
                 nn.Sigmoid(),
                 nn.Linear(in_features=256, out_features=64, bias=True),
                 nn.Sigmoid(),
-                nn.Linear(in_features=64, out_features=1, bias=True),
+                nn.Linear(in_features=64, out_features=2, bias=True),
                 nn.Sigmoid()
             )
         elif backbone == "resnet50":
@@ -102,7 +103,7 @@ class ShadowLength(nn.Module):
                 nn.Sigmoid(),
                 nn.Linear(in_features=256, out_features=64, bias=True),
                 nn.Sigmoid(),
-                nn.Linear(in_features=64, out_features=1, bias=True),
+                nn.Linear(in_features=64, out_features=2, bias=True),
                 nn.Sigmoid()
             )
 

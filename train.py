@@ -20,6 +20,7 @@ from util.util import train_test_split, write_train_file
 
 # ? remove printing of warnings5
 import warnings
+
 warnings.filterwarnings("ignore")
 
 from model.dataset import CroppedDataset, cast_to_device
@@ -27,8 +28,8 @@ from model.layers import Model
 from model.loss import RMSELoss, combining_loss
 
 
-DATASET_PATH = "dataset.csv"
-IMAGE_DIR = "images"
+DATASET_PATH = "/mnt/d/OneDrive - Higher Education Commission/SPROJ/Omairlabelled/dataset/dataset.csv"
+IMAGE_DIR = "/mnt/d/OneDrive - Higher Education Commission/SPROJ/Omairlabelled/dataset/newImages"
 IMAGE_SIZE = 640
 BATCH_SIZE = 128
 
@@ -54,8 +55,10 @@ def train_cropped(
     counters = {"train": 0, "val": 0}
 
     time_str = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    os.mkdir(f"weights/{time_str}")
-    write_train_file(model, optimizer, loss_fn, num_epochs, shd_loss_weight, f"weights/{time_str}")
+    os.makedirs(f"weights/{time_str}", exist_ok=True)
+    write_train_file(
+        model, optimizer, loss_fn, num_epochs, shd_loss_weight, f"weights/{time_str}"
+    )
 
     for epoch in tqdm(range(num_epochs)):
         print(f"Epoch {epoch} / {num_epochs - 1}", end="\t")
@@ -167,9 +170,13 @@ def main(args):
     model = Model(shd_len_backbone=args.model, pretrained=args.pretrained).to(device)
 
     if args.optimizer == "adam":
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
+        optimizer = torch.optim.Adam(
+            model.parameters(), lr=args.lr, weight_decay=args.wd
+        )
     elif args.optimizer == "sgd":
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.wd)
+        optimizer = torch.optim.SGD(
+            model.parameters(), lr=args.lr, weight_decay=args.wd
+        )
     else:
         raise ValueError("Optimizer not supported")
 
@@ -213,7 +220,7 @@ if __name__ == "__main__":
         "--data",
         type=str,
         help="Path to dataset",
-        default="dataset.csv",
+        default=DATASET_PATH,
         required=False,
     )
     parser.add_argument("--optimizer", type=str, help="Optimizer", default="adam")
@@ -239,7 +246,7 @@ if __name__ == "__main__":
     main(args)
 
 
-'''
+"""
     Example usage:
     python train.py --gpu 0 --model resnet18 --loss
-'''
+"""
