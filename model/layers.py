@@ -3,6 +3,7 @@ from torch.functional import F
 from torch import hub
 import torch
 from torchsummary import summary
+import numpy as np
 
 # from yolov5.models.yolo import DetectionModel as YoloModel
 # from yolov5.models.common import Detections
@@ -25,7 +26,7 @@ DEFAULT_IMAGE_SIZE = 640
 
 
 class Cropping(nn.Module):
-    def __init__(self, out_shape=50):
+    def __init__(self, out_shape=100):
         super().__init__()
         self.out_shape = out_shape
 
@@ -60,12 +61,27 @@ class Lambda(nn.Module):
         super().__init__()
 
     def forward(self, shd_len, solar_angle):
-        shd_len = shd_len * 1000
-        shd_len = shd_len.view(solar_angle.shape)
+        # shd_len = shd_len * 1000
+        # shd_len = shd_len.view(solar_angle.shape)
         height = shd_len / torch.tan(solar_angle)
 
         return torch.clip(height, 0, 33)
 
+class CustomActivation(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        x_shd = x[:, 0]
+        x_solar = x[:, 1]
+
+        x_shd = nn.ReLU(x_shd)
+
+        # custom relu for solar angle
+        x_solar = torch.clip(x_solar, 0, np.pi / 2)
+
+        x = torch.cat((x_shd, x_solar), dim=1)
+        return x
 
 class ShadowLength(nn.Module):
     def __init__(self, backbone="resnet18", pretrained=False):
@@ -80,7 +96,7 @@ class ShadowLength(nn.Module):
                 nn.Linear(in_features=256, out_features=64, bias=True),
                 nn.Sigmoid(),
                 nn.Linear(in_features=64, out_features=2, bias=True),
-                nn.Sigmoid()
+                CustomActivation()
             )
         elif backbone == "resnet101":
             self.resnet = nn.Sequential(
@@ -92,7 +108,7 @@ class ShadowLength(nn.Module):
                 nn.Linear(in_features=256, out_features=64, bias=True),
                 nn.Sigmoid(),
                 nn.Linear(in_features=64, out_features=2, bias=True),
-                nn.Sigmoid()
+                CustomActivation()
             )
         elif backbone == "resnet50":
             self.resnet = nn.Sequential(
@@ -104,7 +120,7 @@ class ShadowLength(nn.Module):
                 nn.Linear(in_features=256, out_features=64, bias=True),
                 nn.Sigmoid(),
                 nn.Linear(in_features=64, out_features=2, bias=True),
-                nn.Sigmoid()
+               CustomActivation()
             )
 
     def forward(self, x):
@@ -126,8 +142,8 @@ class Model(nn.Module):
             backbone=shd_len_backbone, pretrained=pretrained
         )
 
-    def forward(self, image, solar_angle):
-        shd_len = self.shadow_length(image)
+    def forward(self, image):
+        shd_len, solar_angle = self.shadow_length(image)
 
         height = self.lambdaLayer(shd_len, solar_angle)
 

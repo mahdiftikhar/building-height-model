@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 from pvlib.solarposition import get_solarposition
 
@@ -49,3 +50,41 @@ def get_solar_elevation(time, lat, long):
     """
     solpos = get_solarposition(time, lat, long)
     return solpos.elevation.values[0]
+
+def resize_with_padding(img, target_size=(200, 200), padding_color=(114, 114, 114)):
+    """
+    Resize an image while maintaining aspect ratio and add padding to fill the empty space.
+
+    :param image: input image.
+    :param target_size: Tuple (width, height) of the target size.
+    :param padding_color: Tuple (B, G, R) color value for padding. Default is white (255, 255, 255).
+    """
+    # Read the image
+    original_height, original_width = img.shape[:2]
+
+    # Calculate the ratio to maintain aspect ratio
+    img_ratio = original_width / original_height
+    target_ratio = target_size[0] / target_size[1]
+
+    if img_ratio > target_ratio:
+        # Image is wider than the target ratio, fit to width
+        new_width = target_size[0]
+        new_height = int(new_width / img_ratio)
+    else:
+        # Image is taller than the target ratio, fit to height
+        new_height = target_size[1]
+        new_width = int(new_height * img_ratio)
+
+    # Resize the image
+    resized_img = cv2.resize(img, (new_width, new_height), interpolation=cv2.INTER_AREA)
+
+    # Create a new image with the target size and padding color
+    padded_img = np.full((target_size[1], target_size[0], 3), padding_color, dtype=np.uint8)
+
+    # Calculate the padding offsets
+    x_offset = (target_size[0] - new_width) // 2
+    y_offset = (target_size[1] - new_height) // 2
+
+    # Insert the resized image into the padded image
+    padded_img[y_offset:y_offset+new_height, x_offset:x_offset+new_width] = resized_img
+    return padded_img
