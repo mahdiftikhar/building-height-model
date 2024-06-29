@@ -5,9 +5,10 @@ import torch
 from torchsummary import summary
 import numpy as np
 
+
 # from yolov5.models.yolo import DetectionModel as YoloModel
 # from yolov5.models.common import Detections
-from utils import its_xyxy_time, its_denormalize_time
+from model.utils import its_xyxy_time, its_denormalize_time
 
 from torchvision.transforms import Pad, Resize
 from torchvision.models import resnet101, resnet18, resnet50
@@ -70,16 +71,19 @@ class Lambda(nn.Module):
 class CustomActivation(nn.Module):
     def __init__(self):
         super().__init__()
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         x_shd = x[:, 0]
         x_solar = x[:, 1]
 
-        x_shd = nn.ReLU(x_shd)
+        x_shd = self.relu(x_shd)
 
         # custom relu for solar angle
         x_solar = torch.clip(x_solar, 0, np.pi / 2)
 
+        x_shd = x_shd.view(x_shd.shape[0], 1)
+        x_solar = x_solar.view(x_solar.shape[0], 1)
         x = torch.cat((x_shd, x_solar), dim=1)
         return x
 
@@ -124,7 +128,10 @@ class ShadowLength(nn.Module):
             )
 
     def forward(self, x):
-        return self.resnet(x)
+        x = self.resnet(x)
+        x_shd = x[:, 0]
+        x_solar = x[:, 1]
+        return x_shd, x_solar
 
 
 class Model(nn.Module):
@@ -147,4 +154,4 @@ class Model(nn.Module):
 
         height = self.lambdaLayer(shd_len, solar_angle)
 
-        return shd_len, height
+        return shd_len, solar_angle, height
