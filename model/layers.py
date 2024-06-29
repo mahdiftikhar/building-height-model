@@ -65,8 +65,9 @@ class Lambda(nn.Module):
         # shd_len = shd_len * 1000
         # shd_len = shd_len.view(solar_angle.shape)
         height = shd_len / torch.tan(solar_angle)
+        height[torch.isnan(height)] = torch.finfo(height.dtype).max
 
-        return torch.clip(height, 0, 33)
+        return height
 
 class CustomActivation(nn.Module):
     def __init__(self):
