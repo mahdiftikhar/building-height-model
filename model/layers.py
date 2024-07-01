@@ -64,8 +64,9 @@ class Lambda(nn.Module):
     def forward(self, shd_len, solar_angle):
         # shd_len = shd_len * 1000
         # shd_len = shd_len.view(solar_angle.shape)
-        height = shd_len / torch.tan(solar_angle)
-        height[torch.isnan(height)] = torch.finfo(height.dtype).max
+        height = shd_len * torch.tan(solar_angle)
+        height = torch.nan_to_num(height, nan=100)
+        # height[torch.isnan(height)] = torch.finfo(height.dtype).max
 
         return height
 
@@ -75,13 +76,21 @@ class CustomActivation(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
+        
+        
         x_shd = x[:, 0]
         x_solar = x[:, 1]
 
         x_shd = self.relu(x_shd)
 
+        # print("\n=========================")
+        # print(x_solar)
+        # print("=========================")
+
         # custom relu for solar angle
-        x_solar = torch.clip(x_solar, 0, np.pi / 2)
+        # x_solar = torch.clip(x_solar, 0.1, torch.pi / 2)
+        x_solar = torch.clip(x_solar, 0.01, torch.pi / 2)
+
 
         x_shd = x_shd.view(x_shd.shape[0], 1)
         x_solar = x_solar.view(x_solar.shape[0], 1)
@@ -96,11 +105,11 @@ class ShadowLength(nn.Module):
             self.resnet = nn.Sequential(
                 *list(resnet18(pretrained=pretrained).children())[:-1],
                 nn.Flatten(),
-                nn.Linear(in_features=512, out_features=256, bias=True),
-                nn.Sigmoid(),
-                nn.Linear(in_features=256, out_features=64, bias=True),
-                nn.Sigmoid(),
-                nn.Linear(in_features=64, out_features=2, bias=True),
+                # nn.Linear(in_features=512, out_features=256, bias=True),
+                # nn.ReLU(),
+                # nn.Linear(in_features=256, out_features=64, bias=True),
+                # nn.ReLU(),
+                nn.Linear(in_features=512, out_features=2, bias=True),
                 CustomActivation()
             )
         elif backbone == "resnet101":
@@ -109,9 +118,9 @@ class ShadowLength(nn.Module):
                 nn.Flatten(),
                 nn.Linear(in_features=2048, out_features=512, bias=True),
                 nn.Linear(in_features=512, out_features=256, bias=True),
-                nn.Sigmoid(),
+                nn.ReLU(),
                 nn.Linear(in_features=256, out_features=64, bias=True),
-                nn.Sigmoid(),
+                nn.ReLU(),
                 nn.Linear(in_features=64, out_features=2, bias=True),
                 CustomActivation()
             )
@@ -121,9 +130,9 @@ class ShadowLength(nn.Module):
                 nn.Flatten(),
                 nn.Linear(in_features=2048, out_features=512, bias=True),
                 nn.Linear(in_features=512, out_features=256, bias=True),
-                nn.Sigmoid(),
+                nn.ReLU(),
                 nn.Linear(in_features=256, out_features=64, bias=True),
-                nn.Sigmoid(),
+                nn.ReLU(),
                 nn.Linear(in_features=64, out_features=2, bias=True),
                CustomActivation()
             )
@@ -152,7 +161,12 @@ class Model(nn.Module):
 
     def forward(self, image):
         shd_len, solar_angle = self.shadow_length(image)
-
+        # print()
+        # print("shadow length", shd_len)
+        # print("solar angle", solar_angle)
         height = self.lambdaLayer(shd_len, solar_angle)
+        # print("height", height)
+
+        # print("")
 
         return shd_len, solar_angle, height
