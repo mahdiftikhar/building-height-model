@@ -74,6 +74,7 @@ class CustomActivation(nn.Module):
     def __init__(self):
         super().__init__()
         self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         
@@ -81,7 +82,8 @@ class CustomActivation(nn.Module):
         x_shd = x[:, 0]
         x_solar = x[:, 1]
 
-        x_shd = self.relu(x_shd)
+        # x_shd = self.relu(x_shd)
+        x_shd = self.sigmoid(x_shd) * 1000
 
         # print("\n=========================")
         # print(x_solar)
@@ -89,7 +91,7 @@ class CustomActivation(nn.Module):
 
         # custom relu for solar angle
         # x_solar = torch.clip(x_solar, 0.1, torch.pi / 2)
-        x_solar = torch.clip(x_solar, 0.01, torch.pi / 2)
+        x_solar = self.sigmoid(x_solar) * torch.pi / 2
 
 
         x_shd = x_shd.view(x_shd.shape[0], 1)
