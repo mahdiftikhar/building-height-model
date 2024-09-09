@@ -130,12 +130,12 @@ class ShadowLength(nn.Module):
             self.resnet = nn.Sequential(
                 *list(resnet50(pretrained=pretrained).children())[:-1],
                 nn.Flatten(),
-                nn.Linear(in_features=2048, out_features=512, bias=True),
-                nn.Linear(in_features=512, out_features=256, bias=True),
-                nn.ReLU(),
-                nn.Linear(in_features=256, out_features=64, bias=True),
-                nn.ReLU(),
-                nn.Linear(in_features=64, out_features=2, bias=True),
+                # nn.Linear(in_features=2048, out_features=512, bias=True),
+                # nn.Linear(in_features=512, out_features=256, bias=True),
+                # nn.ReLU(),
+                # nn.Linear(in_features=256, out_features=64, bias=True),
+                # nn.ReLU(),
+                nn.Linear(in_features=2048, out_features=2, bias=True),
                CustomActivation()
             )
 
@@ -151,7 +151,7 @@ class Model(nn.Module):
         self,
         yolo_cfg="model/yolo_cfg/yolov5s.yaml",
         yolo_pretrained=True,
-        shd_len_backbone="resnet18",
+        shd_len_backbone="resnet50",
         pretrained=False,
     ):
         super().__init__()
